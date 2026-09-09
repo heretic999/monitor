@@ -193,6 +193,30 @@
       "quiet_days_in_window": 21,
       "came_from_quiet": true,
       "calm_days_now": 0
+    },
+    {
+      "run": "2026-09-09T16:32:37+00:00",
+      "state": "ERUPTION",
+      "reason": "FRP harian 306.92 MW / 33 hotspot",
+      "last_date": "2026-09-09",
+      "data_age_days": 0,
+      "so2_last_date": "2026-09-07",
+      "so2_age_days": 2,
+      "frp_daily": 306.92,
+      "frp_roll7": 272.0,
+      "frp_roll30": 111.0,
+      "hotspots_daily": 33,
+      "ti4_max": 367.0,
+      "so2_max": 4.24,
+      "so2_roll30": 20.65,
+      "so2_15_max": 0.23,
+      "so2_slope_du_month": 21.976,
+      "so2_slope_p": 0.0107,
+      "frp_slope": 10.027,
+      "frp_slope_p": 4.84e-07,
+      "quiet_days_in_window": 21,
+      "came_from_quiet": true,
+      "calm_days_now": 0
     }
   ]
 }
