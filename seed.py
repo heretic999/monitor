@@ -1,19 +1,22 @@
-"""Isi data/thermal.csv dan data/so2.csv dengan riwayat dari pemindaian kontinu 2018-2026.
+"""Isi data/*.csv dengan riwayat dari pemindaian kontinu 2018-2026 — SEKALI saja.
 
-Jalankan SEKALI sebelum run.py pertama, agar metrik rata-rata 30 hari / tren 60 hari
-punya konteks. Sumber: ../firms_kontinu.csv dan ../s5p_so2_kontinu.csv (hasil skrip 21-22).
+Bersifat non-destruktif: berkas yang sudah ada TIDAK ditimpa (agar tidak menghapus
+data harian yang sudah terkumpul dari run.py). Pakai --force untuk menimpa.
+
+Sumber: seed_data/firms_kontinu.csv & seed_data/s5p_so2_kontinu.csv (atau ../ pada folder proyek asli).
 """
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pandas as pd
 
 from config import HOTSPOT_MAP_DAYS, HOTSPOTS_CSV, SO2_CSV, THERMAL_CSV
 
-# Cari sumber seed di ./seed_data/ (repo standalone) lalu ../ (folder proyek asli).
 _HERE = Path(__file__).resolve().parent
 _CANDIDATES = (_HERE / "seed_data", _HERE.parent)
+_FORCE = "--force" in sys.argv
 
 
 def _find(name: str) -> Path | None:
@@ -24,10 +27,19 @@ def _find(name: str) -> Path | None:
     return None
 
 
+def _guard(target: Path) -> bool:
+    if target.exists() and not _FORCE:
+        print(f"  lewati {target.name} — sudah ada (pakai --force untuk menimpa)")
+        return False
+    return True
+
+
 def seed_thermal() -> None:
+    if not _guard(THERMAL_CSV):
+        return
     src = _find("firms_kontinu.csv")
     if src is None:
-        print("  ! firms_kontinu.csv tidak ditemukan di seed_data/ atau ../ — lewati")
+        print("  ! firms_kontinu.csv tidak ditemukan — lewati")
         return
     d = pd.read_csv(src, parse_dates=["waktu_wib"])
     daily = (d.set_index("waktu_wib").resample("D")
@@ -37,13 +49,15 @@ def seed_thermal() -> None:
              .reset_index().rename(columns={"waktu_wib": "date"}))
     daily["date"] = daily["date"].dt.strftime("%Y-%m-%d")
     daily.to_csv(THERMAL_CSV, index=False)
-    print(f"  seed termal: {len(daily)} hari -> {THERMAL_CSV}")
+    print(f"  seed termal: {len(daily)} hari -> {THERMAL_CSV.name}")
 
 
 def seed_so2() -> None:
+    if not _guard(SO2_CSV):
+        return
     src = _find("s5p_so2_kontinu.csv")
     if src is None:
-        print("  ! s5p_so2_kontinu.csv tidak ditemukan di seed_data/ atau ../ — lewati")
+        print("  ! s5p_so2_kontinu.csv tidak ditemukan — lewati")
         return
     d = pd.read_csv(src, parse_dates=["tanggal"])
     out = pd.DataFrame({
@@ -53,10 +67,12 @@ def seed_so2() -> None:
         "so2_15_du": d["so2_15_mean_DU"],
     })
     out.to_csv(SO2_CSV, index=False)
-    print(f"  seed SO2: {len(out)} hari -> {SO2_CSV}")
+    print(f"  seed SO2: {len(out)} hari -> {SO2_CSV.name}")
 
 
 def seed_hotspots() -> None:
+    if not _guard(HOTSPOTS_CSV):
+        return
     src = _find("firms_kontinu.csv")
     if src is None:
         return
@@ -69,7 +85,7 @@ def seed_hotspots() -> None:
            .sort_values("ts"))
     out["ts"] = out["ts"].dt.strftime("%Y-%m-%d %H:%M")
     out.to_csv(HOTSPOTS_CSV, index=False)
-    print(f"  seed hotspot: {len(out)} titik -> {HOTSPOTS_CSV}")
+    print(f"  seed hotspot: {len(out)} titik -> {HOTSPOTS_CSV.name}")
 
 
 if __name__ == "__main__":
