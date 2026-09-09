@@ -35,6 +35,10 @@ DU_PER_MOL_M2 = 2241.15
 DISCORD_WEBHOOK = os.environ.get("DISCORD_WEBHOOK", "")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
+NOTIFY_CONFIGURED = bool(DISCORD_WEBHOOK or (TELEGRAM_TOKEN and TELEGRAM_CHAT_ID))
+
+REPO_URL = "https://github.com/heretic999/monitor"
+SO2_STALE_DAYS = 4  # umur data SO2 dianggap "basi" di atas ini
 
 
 @dataclass(frozen=True)
