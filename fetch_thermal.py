@@ -67,7 +67,7 @@ def _save_recent_hotspots(detections: pd.DataFrame) -> None:
            .drop_duplicates(["latitude", "longitude", "ts"])
            .sort_values("ts"))
     out["ts"] = out["ts"].dt.strftime("%Y-%m-%d %H:%M")
-    out.to_csv(HOTSPOTS_CSV, index=False, float_format="%.6g")
+    out.to_csv(HOTSPOTS_CSV, index=False, float_format="%.6g", lineterminator="\n")
     print(f"  hotspot terkini: {len(out)} titik ({HOTSPOT_MAP_DAYS} hari) -> {HOTSPOTS_CSV.name}")
 
 
@@ -110,7 +110,7 @@ def update_thermal_csv() -> pd.DataFrame:
         .sort_values("date")
         .reset_index(drop=True)
     )
-    merged.to_csv(THERMAL_CSV, index=False, float_format="%.6g")
+    merged.to_csv(THERMAL_CSV, index=False, float_format="%.6g", lineterminator="\n")
     merged["date"] = pd.to_datetime(merged["date"])
     print(f"  termal: {len(new_daily)} hari baru, total {len(merged)} hari "
           f"(sd {merged['date'].max():%Y-%m-%d})")

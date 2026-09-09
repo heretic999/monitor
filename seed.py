@@ -48,7 +48,7 @@ def seed_thermal() -> None:
                   ti4_max=("bright_ti4", "max"))
              .reset_index().rename(columns={"waktu_wib": "date"}))
     daily["date"] = daily["date"].dt.strftime("%Y-%m-%d")
-    daily.to_csv(THERMAL_CSV, index=False, float_format="%.6g")
+    daily.to_csv(THERMAL_CSV, index=False, float_format="%.6g", lineterminator="\n")
     print(f"  seed termal: {len(daily)} hari -> {THERMAL_CSV.name}")
 
 
@@ -66,7 +66,7 @@ def seed_so2() -> None:
         "so2_mean_du": d["so2_mean_DU"],
         "so2_15_du": d["so2_15_mean_DU"],
     })
-    out.to_csv(SO2_CSV, index=False, float_format="%.6g")
+    out.to_csv(SO2_CSV, index=False, float_format="%.6g", lineterminator="\n")
     print(f"  seed SO2: {len(out)} hari -> {SO2_CSV.name}")
 
 
@@ -84,7 +84,7 @@ def seed_hotspots() -> None:
            .drop_duplicates(["latitude", "longitude", "ts"])
            .sort_values("ts"))
     out["ts"] = out["ts"].dt.strftime("%Y-%m-%d %H:%M")
-    out.to_csv(HOTSPOTS_CSV, index=False, float_format="%.6g")
+    out.to_csv(HOTSPOTS_CSV, index=False, float_format="%.6g", lineterminator="\n")
     print(f"  seed hotspot: {len(out)} titik -> {HOTSPOTS_CSV.name}")
 
 

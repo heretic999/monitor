@@ -33,7 +33,7 @@ def _load_state() -> dict:
 
 
 def _save_state(state: dict) -> None:
-    STATE_JSON.write_text(json.dumps(state, indent=2), encoding="utf-8")
+    STATE_JSON.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
 def main() -> None:

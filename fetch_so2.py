@@ -92,7 +92,7 @@ def update_so2_csv() -> pd.DataFrame:
         .sort_values("date")
         .reset_index(drop=True)
     )
-    merged.to_csv(SO2_CSV, index=False, float_format="%.6g")
+    merged.to_csv(SO2_CSV, index=False, float_format="%.6g", lineterminator="\n")
     merged["date"] = pd.to_datetime(merged["date"])
     tail = f"(sd {merged['date'].max():%Y-%m-%d})" if len(merged) else "(kosong)"
     print(f"  SO2: {len(new)} hari baru, total {len(merged)} hari {tail}")
