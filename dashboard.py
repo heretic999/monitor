@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import io
+import json
 from datetime import datetime, timezone
 
 import matplotlib
@@ -12,7 +13,8 @@ import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 
 from config import (  # noqa: E402
-    DASHBOARD_HTML, DISCLAIMER, NOTIFY_CONFIGURED, REPO_URL, SO2_STALE_DAYS,
+    CENTER_LAT, CENTER_LON, DASHBOARD_HTML, DISCLAIMER, HOTSPOT_MAP_DAYS,
+    HOTSPOTS_CSV, NOTIFY_CONFIGURED, REPO_URL, SO2_STALE_DAYS,
 )
 from history import historical_context  # noqa: E402
 
@@ -50,6 +52,68 @@ def _plot(thermal: pd.DataFrame, so2: pd.DataFrame) -> str:
     fig.savefig(buf, format="png", dpi=110)
     plt.close(fig)
     return base64.b64encode(buf.getvalue()).decode("ascii")
+
+
+_LEAFLET_CSS = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+_LEAFLET_JS = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"
+
+
+def hotspot_map_html(hotspots: pd.DataFrame) -> str:
+    """Peta Leaflet sebaran hotspot (warna = umur, ukuran = FRP). String kosong bila tak ada data."""
+    if hotspots.empty:
+        return ""
+    h = hotspots.copy()
+    h["ts"] = pd.to_datetime(h["ts"])
+    # fokus ke pulau + medan dekat: buang piksel jauh (>4 km) yang umumnya noise geolokasi
+    near = (h["latitude"].sub(CENTER_LAT).abs() < 0.04) & (h["longitude"].sub(CENTER_LON).abs() < 0.04)
+    h = h[near]
+    if h.empty:
+        return ""
+    latest = h["ts"].max()
+    pts = [
+        {
+            "lat": round(float(r.latitude), 5),
+            "lon": round(float(r.longitude), 5),
+            "frp": round(float(r.frp) if pd.notna(r.frp) else 1.0, 1),
+            "age": round((latest - r.ts).total_seconds() / 86400.0, 1),
+            "t": r.ts.strftime("%d %b %H:%M"),
+        }
+        for r in h.itertuples()
+    ]
+    data = json.dumps(pts, separators=(",", ":"))
+    return f"""
+ <div class="card"><h2>Sebaran hotspot ({HOTSPOT_MAP_DAYS} hari, n={len(pts)})</h2>
+  <div id="hsmap"></div>
+  <p class="ts">Warna = umur deteksi (merah tua = terbaru). Ukuran &prop; FRP.
+   Lingkaran merah = radius bahaya 3 km. Sumber titik: VIIRS 375 m (NASA FIRMS).</p>
+ </div>
+ <link rel="stylesheet" href="{_LEAFLET_CSS}">
+ <script src="{_LEAFLET_JS}"></script>
+ <script>
+ (function(){{
+   var pts={data};
+   var m=L.map('hsmap').setView([{CENTER_LAT},{CENTER_LON}],13);
+   L.tileLayer('https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png',
+     {{maxZoom:17,attribution:'&copy; OpenStreetMap'}}).addTo(m);
+   L.circle([{CENTER_LAT},{CENTER_LON}],{{radius:3000,color:'#c62828',weight:1,fill:false}}).addTo(m);
+   L.marker([{CENTER_LAT},{CENTER_LON}]).addTo(m).bindPopup('Puncak Anak Krakatau');
+   pts.forEach(function(p){{
+     var c=p.age<2?'#b71c1c':p.age<5?'#e65100':p.age<9?'#f9a825':'#fff59d';
+     L.circleMarker([p.lat,p.lon],{{radius:Math.max(3,Math.min(13,Math.sqrt(p.frp)*1.5)),
+       color:'#333',weight:.5,fillColor:c,fillOpacity:.75}})
+      .bindPopup(p.t+'<br>FRP '+p.frp+' MW<br>'+p.age+' hari lalu').addTo(m);
+   }});
+ }})();
+ </script>"""
+
+
+def _load_hotspots() -> pd.DataFrame:
+    if HOTSPOTS_CSV.exists():
+        try:
+            return pd.read_csv(HOTSPOTS_CSV)
+        except (pd.errors.EmptyDataError, OSError):
+            pass
+    return pd.DataFrame(columns=["latitude", "longitude", "frp", "bright_ti4", "ts"])
 
 
 def _metric_rows(metrics: dict) -> str:
@@ -119,6 +183,7 @@ def render(state: str, reason: str, metrics: dict,
     color = _COLOR.get(state, "#555")
     img = _plot(thermal, so2)
     ctx = historical_context(thermal)
+    hs_card = hotspot_map_html(_load_hotspots())
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     html = f"""<!doctype html><html lang="id"><head><meta charset="utf-8">
@@ -137,6 +202,7 @@ def render(state: str, reason: str, metrics: dict,
  td{{padding:6px 8px;border-bottom:1px solid #eee}}
  td:last-child{{text-align:right;white-space:nowrap}}
  img{{width:100%;border-radius:8px}}
+ #hsmap{{height:360px;border-radius:8px}}
  .disc{{font-size:.84rem;color:#52525b;line-height:1.55}}
  .disc ul{{margin:6px 0;padding-left:20px}}
  .disc a{{color:#1565c0}}
@@ -146,6 +212,7 @@ def render(state: str, reason: str, metrics: dict,
  <div class="banner"><h1>🌋 Anak Krakatau — {state}</h1><p>{reason}</p></div>
  {_so2_stale_banner(metrics)}
  <div class="card"><img alt="grafik termal dan SO2" src="data:image/png;base64,{img}"></div>
+ {hs_card}
  <div class="card"><h2>Metrik terkini</h2><table>{_metric_rows(metrics)}</table></div>
  <div class="card"><h2>Konteks historis (2018–sekarang)</h2><table>{_history_rows(ctx)}</table></div>
  {_footer(now)}

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from config import SO2_CSV, THERMAL_CSV
+from config import HOTSPOT_MAP_DAYS, HOTSPOTS_CSV, SO2_CSV, THERMAL_CSV
 
 # Cari sumber seed di ./seed_data/ (repo standalone) lalu ../ (folder proyek asli).
 _HERE = Path(__file__).resolve().parent
@@ -56,6 +56,23 @@ def seed_so2() -> None:
     print(f"  seed SO2: {len(out)} hari -> {SO2_CSV}")
 
 
+def seed_hotspots() -> None:
+    src = _find("firms_kontinu.csv")
+    if src is None:
+        return
+    d = pd.read_csv(src, parse_dates=["waktu_wib"])
+    cutoff = d["waktu_wib"].max() - pd.Timedelta(days=HOTSPOT_MAP_DAYS)
+    d = d[d["waktu_wib"] >= cutoff]
+    out = (d[["latitude", "longitude", "frp", "bright_ti4", "waktu_wib"]]
+           .rename(columns={"waktu_wib": "ts"})
+           .drop_duplicates(["latitude", "longitude", "ts"])
+           .sort_values("ts"))
+    out["ts"] = out["ts"].dt.strftime("%Y-%m-%d %H:%M")
+    out.to_csv(HOTSPOTS_CSV, index=False)
+    print(f"  seed hotspot: {len(out)} titik -> {HOTSPOTS_CSV}")
+
+
 if __name__ == "__main__":
     seed_thermal()
     seed_so2()
+    seed_hotspots()

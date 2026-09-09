@@ -11,8 +11,10 @@ DATA_DIR.mkdir(exist_ok=True)
 
 THERMAL_CSV = DATA_DIR / "thermal.csv"
 SO2_CSV = DATA_DIR / "so2.csv"
+HOTSPOTS_CSV = DATA_DIR / "hotspots_recent.csv"
 STATE_JSON = DATA_DIR / "state.json"
 DASHBOARD_HTML = ROOT / "dashboard.html"
+HOTSPOT_MAP_DAYS = 14  # jendela deteksi individual untuk peta sebaran
 
 # --- Area studi ---
 BBOX_FIRMS = "105.30,-6.20,105.55,-6.00"  # barat,selatan,timur,utara

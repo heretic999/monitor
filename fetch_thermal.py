@@ -7,7 +7,10 @@ import time
 import pandas as pd
 import requests
 
-from config import BBOX_FIRMS, FIRMS_LOOKBACK_DAYS, FIRMS_MAP_KEY, FIRMS_SOURCES, THERMAL_CSV
+from config import (
+    BBOX_FIRMS, FIRMS_LOOKBACK_DAYS, FIRMS_MAP_KEY, FIRMS_SOURCES,
+    HOTSPOT_MAP_DAYS, HOTSPOTS_CSV, THERMAL_CSV,
+)
 
 _HEADERS = {"User-Agent": "krakatau-monitor/1.0 (riset pribadi)"}
 _API = "https://firms.modaps.eosdis.nasa.gov/api/area/csv"
@@ -50,6 +53,24 @@ def fetch_recent_detections() -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
+def _save_recent_hotspots(detections: pd.DataFrame) -> None:
+    """Simpan deteksi individual (lat, lon, frp, waktu) untuk peta sebaran."""
+    if detections.empty:
+        return
+    d = detections.copy()
+    d["ts"] = pd.to_datetime(
+        d["acq_date"] + " " + d["acq_time"].astype(str).str.zfill(4),
+        format="%Y-%m-%d %H%M") + pd.Timedelta(hours=7)
+    cutoff = pd.Timestamp.utcnow().tz_localize(None) - pd.Timedelta(days=HOTSPOT_MAP_DAYS)
+    d = d[d["ts"] >= cutoff]
+    out = (d[["latitude", "longitude", "frp", "bright_ti4", "ts"]]
+           .drop_duplicates(["latitude", "longitude", "ts"])
+           .sort_values("ts"))
+    out["ts"] = out["ts"].dt.strftime("%Y-%m-%d %H:%M")
+    out.to_csv(HOTSPOTS_CSV, index=False)
+    print(f"  hotspot terkini: {len(out)} titik ({HOTSPOT_MAP_DAYS} hari) -> {HOTSPOTS_CSV.name}")
+
+
 def _to_daily(detections: pd.DataFrame) -> pd.DataFrame:
     if detections.empty:
         return pd.DataFrame(columns=["date", "frp_total", "hotspots", "ti4_max"])
@@ -74,7 +95,9 @@ def _to_daily(detections: pd.DataFrame) -> pd.DataFrame:
 
 def update_thermal_csv() -> pd.DataFrame:
     """Gabungkan data baru ke THERMAL_CSV (baris terbaru menang) dan kembalikan seluruh riwayat."""
-    new_daily = _to_daily(fetch_recent_detections())
+    detections = fetch_recent_detections()
+    _save_recent_hotspots(detections)
+    new_daily = _to_daily(detections)
 
     if THERMAL_CSV.exists():
         old = pd.read_csv(THERMAL_CSV)
