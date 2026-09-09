@@ -22,7 +22,9 @@ SO2_BUFFER_M = 30_000
 ISLAND_RECT = (105.407, -6.118, 105.440, -6.088)  # untuk SAR (fase lanjutan)
 
 # --- Sumber data (kredensial via environment variable) ---
-FIRMS_MAP_KEY = os.environ.get("FIRMS_MAP_KEY", "7676762a4c4a95d2035e0315016daeaa")
+# FIRMS_MAP_KEY: ambil gratis di https://firms.modaps.eosdis.nasa.gov/api/map_key/
+# Lokal: set di run_local.bat atau environment. CI: repository secret.
+FIRMS_MAP_KEY = os.environ.get("FIRMS_MAP_KEY", "")
 FIRMS_SOURCES = ("VIIRS_SNPP_NRT", "VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT")
 FIRMS_LOOKBACK_DAYS = 12  # tarik ulang jendela ini tiap run (menangkap revisi)
 GEE_PROJECT = os.environ.get("GEE_PROJECT", "latihan-481319")

@@ -29,6 +29,9 @@ def _fetch_window(source: str, start: pd.Timestamp, days: int) -> pd.DataFrame |
 
 def fetch_recent_detections() -> pd.DataFrame:
     """Kembalikan deteksi mentah untuk jendela FIRMS_LOOKBACK_DAYS terakhir."""
+    if not FIRMS_MAP_KEY:
+        print("  ! FIRMS_MAP_KEY kosong — set environment variable / repository secret.")
+        return pd.DataFrame()
     end = pd.Timestamp.utcnow().tz_localize(None).normalize() + pd.Timedelta(days=1)
     start = end - pd.Timedelta(days=FIRMS_LOOKBACK_DAYS)
     frames: list[pd.DataFrame] = []
