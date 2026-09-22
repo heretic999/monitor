@@ -601,6 +601,30 @@
       "quiet_days_in_window": 15,
       "came_from_quiet": false,
       "calm_days_now": 0
+    },
+    {
+      "run": "2026-09-22T06:14:16+00:00",
+      "state": "ERUPTION",
+      "reason": "menahan ERUPTION (baru 0/30 hari tenang)",
+      "last_date": "2026-09-21",
+      "data_age_days": 1,
+      "so2_last_date": "2026-09-07",
+      "so2_age_days": 15,
+      "frp_daily": 43.19,
+      "frp_roll7": 145.74,
+      "frp_roll30": 140.04,
+      "hotspots_daily": 12,
+      "ti4_max": 334.4,
+      "so2_max": 4.24,
+      "so2_roll30": 33.74,
+      "so2_15_max": 0.23,
+      "so2_slope_du_month": 33.577,
+      "so2_slope_p": 0.0127,
+      "frp_slope": 4.77,
+      "frp_slope_p": 0.00826,
+      "quiet_days_in_window": 15,
+      "came_from_quiet": false,
+      "calm_days_now": 0
     }
   ]
 }
